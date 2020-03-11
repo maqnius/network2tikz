@@ -26,13 +26,14 @@
 # =============================================================================
 
 import numpy as np
+import logging
 from collections import OrderedDict
-from . import logger
 from .exceptions import CnetError
 from .units import UnitConverter
 from .canvas import Canvas
 from .layout import Layout
-log = logger(__name__)
+
+logger = logging.getLogger(__name__)
 
 # TODO: move this to the config file
 DIGITS = 3
@@ -101,7 +102,7 @@ class TikzNetworkDrawer(object):
 
         # check type of network
         if 'cnet' in str(type(network)):
-            # log.debug('The network is of type "cnet".')
+            logger.debug('The network is of type "cnet".')
             for e, n in network.edges(nodes=True):
                 self.edges[e] = n
             self.nodes = list(network.nodes)
@@ -110,7 +111,7 @@ class TikzNetworkDrawer(object):
                 self.adjacency_matrix = network.adjacency_matrix(weight=_weight)
 
         elif 'networkx' in str(type(network)):
-            # log.debug('The network is of type "networkx".')
+            logger.debug('The network is of type "networkx".')
             for e in network.edges():
                 self.edges[e] = e
             self.nodes = list(network.nodes())
@@ -121,7 +122,7 @@ class TikzNetworkDrawer(object):
                     network, weight=_weight)
 
         elif 'igraph' in str(type(network)):
-            # log.debug('The network is of type "igraph".')
+            logger.debug('The network is of type "igraph".')
             for i in range(len(network.es)):
                 self.edges[i] = network.es[i].tuple
             self.nodes = list(range(len(network.vs)))
@@ -132,7 +133,7 @@ class TikzNetworkDrawer(object):
                 self.adjacency_matrix = coo_matrix(A)
 
         elif 'pathpy' in str(type(network)):
-            # log.debug('The network is of type "pathpy".')
+            logger.debug('The network is of type "pathpy".')
             for e in network.edges:
                 self.edges[e] = e
             self.nodes = list(network.nodes)
@@ -145,13 +146,13 @@ class TikzNetworkDrawer(object):
                 self.adjacency_matrix = network.adjacency_matrix(weighted=_w)
 
         elif isinstance(network, tuple):
-            # log.debug('The network is of type "list".')
+            logger.debug('The network is of type "list".')
             self.nodes = network[0]
             for e in network[1]:
                 self.edges[e] = e
 
         else:
-            log.error('Type of the network could not be determined.'
+            logger.error('Type of the network could not be determined.'
                       ' Currently only "cnet", "networkx","igraph", "pathpy"'
                       ' and "node/edge list" is supported!')
             raise CnetNotImplemented
@@ -231,7 +232,7 @@ class TikzNetworkDrawer(object):
 
         # check if network is directed and nothing other is defined
         if self.directed and \
-           self.edge_attributes.get('edge_directed', None) is None:
+                self.edge_attributes.get('edge_directed', None) is None:
             self.edge_attributes['edge_directed'] = self.format_edge_value(True)
 
         # convert the units
@@ -311,7 +312,7 @@ class TikzNetworkDrawer(object):
                 _attr = {}
                 for k, v in self.node_attributes[key].items():
                     if isinstance(v, int) or isinstance(v, float):
-                        _attr[k] = round(self.unit2pt(v)/7, self.digits)
+                        _attr[k] = round(self.unit2pt(v) / 7, self.digits)
                     else:
                         _attr[k] = v
                 self.node_attributes[key] = _attr
@@ -341,7 +342,7 @@ class TikzNetworkDrawer(object):
                 _attr = {}
                 for k, v in self.edge_attributes[key].items():
                     if isinstance(v, int) or isinstance(v, float):
-                        _attr[k] = str(self.unit2cm(v))+'cm'
+                        _attr[k] = str(self.unit2cm(v)) + 'cm'
                     else:
                         _attr[k] = v
                 self.edge_attributes[key] = _attr
@@ -351,7 +352,7 @@ class TikzNetworkDrawer(object):
                 _attr = {}
                 for k, v in self.edge_attributes[key].items():
                     if isinstance(v, int) or isinstance(v, float):
-                        _attr[k] = round(self.unit2pt(v)/7, self.digits)
+                        _attr[k] = round(self.unit2pt(v) / 7, self.digits)
                     else:
                         _attr[k] = v
                 self.edge_attributes[key] = _attr
@@ -375,14 +376,14 @@ class TikzNetworkDrawer(object):
         for key in ['xshift', 'yshift']:
             if key in self.general_attributes:
                 v = self.general_attributes[key]
-                self.general_attributes[key] = str(self.unit2cm(v))+'cm'
+                self.general_attributes[key] = str(self.unit2cm(v)) + 'cm'
 
     def format_node_value(self, value):
         """Returns a dict with node ids and assigned values."""
         # check if value is string, list or dict
         _values = {}
         if isinstance(value, str) or isinstance(value, int) or \
-           isinstance(value, float) or isinstance(value, tuple):
+                isinstance(value, float) or isinstance(value, tuple):
             for n in self.nodes:
                 _values[n] = value
         elif isinstance(value, list):
@@ -398,7 +399,7 @@ class TikzNetworkDrawer(object):
                 except:
                     _values[n] = None
         else:
-            log.error('Something went wrong, by formatting the node values!')
+            logger.error('Something went wrong, by formatting the node values!')
             raise CnetError
         return _values
 
@@ -407,8 +408,8 @@ class TikzNetworkDrawer(object):
         # check if value is string, list or dict
         _values = {}
         if isinstance(value, str) or isinstance(value, int) or \
-           isinstance(value, float) or isinstance(value, bool) \
-           or isinstance(value, tuple):
+                isinstance(value, float) or isinstance(value, bool) \
+                or isinstance(value, tuple):
             for n in self.edges:
                 _values[n] = value
         elif isinstance(value, list):
@@ -424,7 +425,7 @@ class TikzNetworkDrawer(object):
                 except:
                     _values[n] = None
         else:
-            log.error('Something went wrong, by formatting the edge values!')
+            logger.error('Something went wrong, by formatting the edge values!')
             raise CnetError
         return _values
 
@@ -440,14 +441,14 @@ class TikzNetworkDrawer(object):
                 else:
                     v1 = np.array([0, 0])
                     v2 = np.array([1, 1])
-                    v3 = np.array([(2*v1[0]+v2[0]) / 3.0 - curved * 0.5 * (v2[1]-v1[1]),
-                                   (2*v1[1]+v2[1]) / 3.0 +
-                                   curved * 0.5 * (v2[0]-v1[0])
+                    v3 = np.array([(2 * v1[0] + v2[0]) / 3.0 - curved * 0.5 * (v2[1] - v1[1]),
+                                   (2 * v1[1] + v2[1]) / 3.0 +
+                                   curved * 0.5 * (v2[0] - v1[0])
                                    ])
-                    vec1 = v2-v1
+                    vec1 = v2 - v1
                     vec2 = v3 - v1
                     angle = np.rad2deg(np.arccos(
-                        np.dot(vec1, vec2) / np.sqrt((vec1*vec1).sum()) / np.sqrt((vec2*vec2).sum())))
+                        np.dot(vec1, vec2) / np.sqrt((vec1 * vec1).sum()) / np.sqrt((vec2 * vec2).sum())))
                     _curved[key] = np.round(
                         np.sign(curved) * angle * -1, self.digits)
         return _curved
@@ -563,18 +564,18 @@ class TikzEdgeDrawer(object):
         """
         if 'edge_arrow_size' in self.attributes:
             arrow_size = 'length=' + \
-                str(15*self.attributes['edge_arrow_size'])+'cm,'
+                         str(15 * self.attributes['edge_arrow_size']) + 'cm,'
         else:
             arrow_size = ''
 
         if 'edge_arrow_size' in self.attributes:
             arrow_width = 'width=' + \
-                str(10*self.attributes['edge_arrow_width'])+'cm'
+                          str(10 * self.attributes['edge_arrow_width']) + 'cm'
         else:
             arrow_width = ''
 
-        if (arrow_size != '' or arrow_width != '') and\
-           self.attributes.get('edge_directed', False) == True:
+        if (arrow_size != '' or arrow_width != '') and \
+                self.attributes.get('edge_directed', False) == True:
             self.attributes['edge_style'] = '{{-{{Latex[{}{}]}}, {} }}'.format(
                 arrow_size, arrow_width, self.attributes.get('edge_style', ''))
 
@@ -757,12 +758,12 @@ class TikzNodeDrawer(object):
         """
         if mode == 'tex':
             self._check_color()
-            string = '\\Vertex[x={x:.{n}f},y={y:.{n}f}'\
+            string = '\\Vertex[x={x:.{n}f},y={y:.{n}f}' \
                      ''.format(x=self.x, y=self.y, n=self.digits)
 
             for k in self.tikz_kwds:
                 if k in self.attributes and \
-                   self.attributes.get(k, None) is not None:
+                        self.attributes.get(k, None) is not None:
                     string += ',{}={}'.format(self.tikz_kwds[k],
                                               self.attributes[k])
             for k in self.tikz_args:
@@ -774,7 +775,7 @@ class TikzNodeDrawer(object):
 
         elif mode == 'csv':
             self._check_color(mode='csv')
-            string = '{id},{x:.{n}f},{y:.{n}f}'\
+            string = '{id},{x:.{n}f},{y:.{n}f}' \
                      ''.format(id=self.id, x=self.x, y=self.y, n=self.digits)
 
             for k in self.tikz_kwds:
