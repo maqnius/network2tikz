@@ -115,3 +115,6 @@ tikz-network.sty
 /tests/network.pdf
 /tests/network_edges.csv
 /tests/network_nodes.csv
+
+# intellij settings dir
+.idea
