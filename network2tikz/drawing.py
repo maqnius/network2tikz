@@ -211,17 +211,13 @@ class TikzNetworkDrawer(object):
         # go through all attributes and assign them to nodes, edges or the
         # general dictionary
         for key, value in kwds.items():
-            if 'node_' in key:
+            if key.startswith('node_'):
                 self.node_attributes[key] = self.format_node_value(value)
-            elif 'edge_' in key:
+            elif key.startswith('edge_'):
                 self.edge_attributes[key] = self.format_edge_value(value)
-            # elif 'layout_' in key:
-            #     if 'fixed' in key or 'positions' in key:
-            #         self.layout_attributes[key] = self.format_node_value(value)
-            #     elif 'weight' in key:
-            #         self.layout_attributes[key] = self.format_edge_value(value)
-            #     else:
-            #         self.layout_attributes[key] = value
+            elif key.startswith('edges_') and isinstance(value, dict):
+                # remove edges_ prefix
+                self.edge_attributes[key[6:]] = value
             else:
                 if 'fixed' in key or 'positions' in key:
                     self.general_attributes[key] = self.format_node_value(value)
@@ -600,19 +596,16 @@ class TikzEdgeDrawer(object):
             self._format_style()
             self._check_color()
 
-            string = '\\Edge['
+            attr = []
+            for key, value in self.attributes.items():
+                if key in self.tikz_kwds:
+                    attr.append('{}={}'.format(self.tikz_kwds[key], value))
+                elif key in self.tikz_args and value:
+                    attr.append('{}'.format(self.tikz_args[key]))
+                else:
+                    attr.append('{}={}'.format(key, value))
 
-            for k in self.tikz_kwds:
-                if k in self.attributes and \
-                   self.attributes.get(k, None) is not None:
-                    string += ',{}={}'.format(self.tikz_kwds[k],
-                                              self.attributes[k])
-            for k in self.tikz_args:
-                if k in self.attributes:
-                    if self.attributes[k] == True:
-                        string += ',{}'.format(self.tikz_args[k])
-
-            string += ']({})({})'.format(self.u, self.v)
+            string = '\\Edge[{}]({})({})'.format(','.join(attr), self.u, self.v)
 
         elif mode == 'csv':
             self._check_color(mode='csv')
