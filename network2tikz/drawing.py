@@ -599,11 +599,11 @@ class TikzEdgeDrawer(object):
             attr = []
             for key, value in self.attributes.items():
                 if key in self.tikz_kwds:
-                    attr.append('{}={}'.format(self.tikz_kwds[key], value))
+                    attr.append('{}={{{}}}'.format(self.tikz_kwds[key], value))
                 elif key in self.tikz_args and value:
                     attr.append('{}'.format(self.tikz_args[key]))
                 else:
-                    attr.append('{}={}'.format(key, value))
+                    attr.append('{}={{{}}}'.format(key, value))
 
             string = '\\Edge[{}]({})({})'.format(','.join(attr), self.u, self.v)
 
