@@ -153,8 +153,8 @@ class TikzNetworkDrawer(object):
 
         else:
             logger.error('Type of the network could not be determined.'
-                      ' Currently only "cnet", "networkx","igraph", "pathpy"'
-                      ' and "node/edge list" is supported!')
+                         ' Currently only "cnet", "networkx","igraph", "pathpy"'
+                         ' and "node/edge list" is supported!')
             raise CnetNotImplemented
 
         # assign attributes to the class
@@ -213,6 +213,9 @@ class TikzNetworkDrawer(object):
         for key, value in kwds.items():
             if key.startswith('node_'):
                 self.node_attributes[key] = self.format_node_value(value)
+            elif key.startswith('nodes_') and isinstance(value, dict):
+                # remove nodes_ prefix
+                self.node_attributes[key[6:]] = value
             elif key.startswith('edge_'):
                 self.edge_attributes[key] = self.format_edge_value(value)
             elif key.startswith('edges_') and isinstance(value, dict):
@@ -682,8 +685,7 @@ class TikzNodeDrawer(object):
 
         """
         self.id = id
-        self.x = attr.get('layout', (0, 0))[0]
-        self.y = attr.get('layout', (0, 0))[1]
+        self.x, self.y = attr.pop('layout', (0, 0))
         self.attributes = attr
         self.digits = DIGITS
         # all options from the tikz-network library
@@ -751,20 +753,23 @@ class TikzNodeDrawer(object):
         """
         if mode == 'tex':
             self._check_color()
-            string = '\\Vertex[x={x:.{n}f},y={y:.{n}f}' \
-                     ''.format(x=self.x, y=self.y, n=self.digits)
 
-            for k in self.tikz_kwds:
-                if k in self.attributes and \
-                        self.attributes.get(k, None) is not None:
-                    string += ',{}={}'.format(self.tikz_kwds[k],
-                                              self.attributes[k])
-            for k in self.tikz_args:
-                if k in self.attributes:
-                    if self.attributes[k] == True:
-                        string += ',{}'.format(self.tikz_args[k])
+            attr = []
+            for key, value in self.attributes.items():
+                if key in self.tikz_kwds:
+                    attr.append('{}={{{}}}'.format(self.tikz_kwds[key], value))
+                elif key in self.tikz_args and value:
+                    attr.append('{}'.format(self.tikz_args[key]))
+                else:
+                    attr.append('{}={{{}}}'.format(key, value))
 
-            string += ']{{{}}}'.format(self.id)
+            string = '\\Vertex[x={x:.{n}f},y={y:.{n}f},{a}]{{{id}}}'.format(
+                x=self.x,
+                y=self.y,
+                n=self.digits,
+                a=','.join(attr),
+                id=format(self.id)
+            )
 
         elif mode == 'csv':
             self._check_color(mode='csv')
